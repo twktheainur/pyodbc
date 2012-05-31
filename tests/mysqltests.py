@@ -420,6 +420,7 @@ class MySqlTestCase(unittest.TestCase):
         self.cursor.execute("create table t1(d bigint)")
         self.cursor.execute("insert into t1 values (?)", input)
         result = self.cursor.execute("select d from t1").fetchone()[0]
+        print input, result
         self.assertEqual(result, input)
 
     def test_float(self):
@@ -430,7 +431,7 @@ class MySqlTestCase(unittest.TestCase):
         self.assertEquals(result, value)
 
     def test_negative_float(self):
-        value = -200
+        value = -200.0
         self.cursor.execute("create table t1(n float)")
         self.cursor.execute("insert into t1 values (?)", value)
         result  = self.cursor.execute("select n from t1").fetchone()[0]

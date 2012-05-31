@@ -112,7 +112,7 @@ static PyObject* CnxnInfo_New(Connection* cnxn)
     HSTMT hstmt = 0;
     if (SQL_SUCCEEDED(SQLAllocHandle(SQL_HANDLE_STMT, cnxn->hdbc, &hstmt)))
     {
-        SQLINTEGER columnsize;
+        ULONG columnsize;
         if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_TYPE_TIMESTAMP)) && SQL_SUCCEEDED(SQLFetch(hstmt)))
         {
             if (SQL_SUCCEEDED(SQLGetData(hstmt, 3, SQL_INTEGER, &columnsize, sizeof(columnsize), 0)))

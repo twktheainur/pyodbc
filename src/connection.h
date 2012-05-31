@@ -44,13 +44,14 @@ struct Connection
     bool unicode_results;
 
     // The connection timeout in seconds.
-    int timeout;
+    long timeout;
 
     // These are copied from cnxn info for performance and convenience.
 
     int varchar_maxlength;
     int wvarchar_maxlength;
     int binary_maxlength;
+    bool virtuoso;
 
     // Output conversions.  Maps from SQL type in conv_types to the converter function in conv_funcs.
     //

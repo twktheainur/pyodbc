@@ -24,6 +24,7 @@
 #include "getdata.h"
 #include "dbspecific.h"
 #include "sqlwchar.h"
+#include "virtuoso.h"
 
 enum
 {
@@ -792,6 +793,8 @@ execute(Cursor* cur, PyObject* pSql, PyObject* params, bool skip_first)
     }
 
     FreeParameterData(cur);
+
+    cur->spasql = (cur->cnxn->virtuoso && isSPASQL(pSql));
 
     if (ret == SQL_NO_DATA)
     {
@@ -1918,10 +1921,10 @@ static PyObject* Cursor_getnoscan(PyObject* self, void *closure)
     if (!cursor)
         return 0;
 
-    SQLUINTEGER noscan = SQL_NOSCAN_OFF;
+    ULONG noscan = SQL_NOSCAN_OFF;
     SQLRETURN ret;
     Py_BEGIN_ALLOW_THREADS
-    ret = SQLGetStmtAttr(cursor->hstmt, SQL_ATTR_NOSCAN, (SQLPOINTER)&noscan, sizeof(SQLUINTEGER), 0);
+    ret = SQLGetStmtAttr(cursor->hstmt, SQL_ATTR_NOSCAN, (SQLPOINTER)&noscan, sizeof(ULONG), 0);
     Py_END_ALLOW_THREADS
 
     if (!SQL_SUCCEEDED(ret))
@@ -1950,7 +1953,7 @@ static PyObject* Cursor_setnoscan(PyObject* self, PyObject* value, void *closure
         return 0;
     }
 
-    SQLUINTEGER noscan = PyObject_IsTrue(value) ? SQL_NOSCAN_ON : SQL_NOSCAN_OFF;
+    ULONG noscan = PyObject_IsTrue(value) ? SQL_NOSCAN_ON : SQL_NOSCAN_OFF;
     SQLRETURN ret;
     Py_BEGIN_ALLOW_THREADS
     ret = SQLSetStmtAttr(cursor->hstmt, SQL_ATTR_NOSCAN, (SQLPOINTER)noscan, 0);

@@ -17,6 +17,7 @@
 #include "wrapper.h"
 #include "cnxninfo.h"
 #include "sqlwchar.h"
+#include "virtuoso.h"
 
 static char connection_doc[] =
     "Connection objects manage connections to the database.\n"
@@ -189,6 +190,7 @@ PyObject* Connection_New(PyObject* pConnectString, bool fAutoCommit, bool fAnsi,
     cnxn->conv_count      = 0;
     cnxn->conv_types      = 0;
     cnxn->conv_funcs      = 0;
+    cnxn->virtuoso        = isVirtuoso(hdbc);
 
     //
     // Initialize autocommit mode.
@@ -747,7 +749,7 @@ Connection_settimeout(PyObject* self, PyObject* value, void* closure)
         PyErr_SetString(PyExc_TypeError, "Cannot delete the timeout attribute.");
         return -1;
     }
-    int timeout = PyInt_AsLong(value);
+    long timeout = PyInt_AsLong(value);
     if (timeout == -1 && PyErr_Occurred())
         return -1;
     if (timeout < 0)
