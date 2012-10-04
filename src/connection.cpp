@@ -17,6 +17,7 @@
 #include "wrapper.h"
 #include "cnxninfo.h"
 #include "sqlwchar.h"
+#include "virtuoso.h"
 
 static char connection_doc[] =
     "Connection objects manage connections to the database.\n"
@@ -202,6 +203,7 @@ PyObject* Connection_New(PyObject* pConnectString, bool fAutoCommit, bool fAnsi,
     cnxn->conv_count      = 0;
     cnxn->conv_types      = 0;
     cnxn->conv_funcs      = 0;
+    cnxn->virtuoso        = isVirtuoso(hdbc);
 
     //
     // Initialize autocommit mode.

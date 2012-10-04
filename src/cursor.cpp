@@ -26,6 +26,7 @@
 #include "sqlwchar.h"
 #include <datetime.h>
 #include "wrapper.h"
+#include "virtuoso.h"
 
 enum
 {
@@ -810,6 +811,8 @@ static PyObject* execute(Cursor* cur, PyObject* pSql, PyObject* params, bool ski
     }
 
     FreeParameterData(cur);
+
+    cur->spasql = (cur->cnxn->virtuoso && isSPASQL(pSql));
 
     if (ret == SQL_NO_DATA)
     {

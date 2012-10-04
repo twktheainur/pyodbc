@@ -162,7 +162,7 @@ def get_compiler_settings(version_str):
         settings['extra_compile_args'] = ['-Wno-write-strings']
 
         # What is the proper way to detect iODBC, MyODBC, unixODBC, etc.?
-        settings['libraries'].append('odbc')
+        settings['libraries'].append('iodbc')
 
     return settings
 
@@ -252,7 +252,7 @@ def _get_version_pkginfo():
 
 
 def _get_version_git():
-    n, result = getoutput('git describe --tags --match 3.*')
+    n, result = getoutput('git describe --tags --match \'3.*\'')
     if n:
         _print('WARNING: git describe failed with: %s %s' % (n, result))
         return None, None
