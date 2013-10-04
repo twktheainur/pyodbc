@@ -59,6 +59,7 @@ static const char* SqlTypeName(SQLSMALLINT n)
         _MAKESTR(SQL_BINARY);
         _MAKESTR(SQL_VARBINARY);
         _MAKESTR(SQL_LONGVARBINARY);
+        _MAKESTR(SQL_BIGINT);
     }
     return "unknown";
 }
@@ -300,9 +301,9 @@ static bool GetTimeInfo(Cursor* cur, Py_ssize_t index, PyObject* param, ParamInf
 static bool GetIntInfo(Cursor* cur, Py_ssize_t index, PyObject* param, ParamInfo& info)
 {
     info.Data.l = PyInt_AsLong(param);
-
 #if LONG_BIT == 64
-    info.ValueType     = SQL_C_SBIGINT;
+    // info.ValueType     = SQL_C_SBIGINT;
+    info.ValueType     = SQL_C_LONG;
     info.ParameterType = SQL_BIGINT;
 #elif LONG_BIT == 32
     info.ValueType     = SQL_C_LONG;
