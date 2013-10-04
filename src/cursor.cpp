@@ -1078,7 +1078,7 @@ static PyObject* Cursor_fetch(Cursor* cur)
         apValues[i] = value;
     }
 
-    return (PyObject*)Row_New(cur->description, cur->map_name_to_index, field_count, apValues);
+    return (PyObject*)Row_InternalNew(cur->description, cur->map_name_to_index, field_count, apValues);
 }
 
 
