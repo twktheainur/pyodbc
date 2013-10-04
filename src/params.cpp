@@ -657,7 +657,6 @@ bool PrepareAndBind(Cursor* cur, PyObject* pSql, PyObject* original_params, bool
         return false;
     }
 #endif
-
     //
     // Normalize the parameter variables.
     //
@@ -684,6 +683,7 @@ bool PrepareAndBind(Cursor* cur, PyObject* pSql, PyObject* original_params, bool
         {
             SQLWChar sql(pSql);
             Py_BEGIN_ALLOW_THREADS
+            TRACE("SQLPrepareW(%s)\n", PyString_AsString(pSql));
             ret = SQLPrepareW(cur->hstmt, sql, SQL_NTS);
             if (SQL_SUCCEEDED(ret))
             {
