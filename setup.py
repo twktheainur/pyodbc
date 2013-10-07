@@ -163,6 +163,7 @@ def get_compiler_settings(version_str):
 
         # What is the proper way to detect iODBC, MyODBC, unixODBC, etc.?
         settings['libraries'].append('iodbc')
+        settings['extra_compile_args'].append('-DSQL_WCHART_CONVERT=1')
 
     return settings
 
