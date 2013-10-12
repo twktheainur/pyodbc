@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import sys, os, re, platform
-from os.path import exists, abspath, dirname, join, isdir
+from os.path import exists, abspath, dirname, join, isdir, isfile
 
 try:
     # Allow use of setuptools so eggs can be built.
@@ -143,27 +143,40 @@ def get_compiler_settings(version_str):
         # OS name not windows, but still on Windows
         settings['libraries'].append('odbc32')
 
-    elif sys.platform == 'darwin':
-        # OS/X now ships with iODBC.
-        settings['libraries'].append('iodbc')
-
-        # Apple has decided they won't maintain the iODBC system in OS/X and has added deprecation warnings in 10.8.
-        # For now target 10.7 to eliminate the warnings.
-
-        # Python functions take a lot of 'char *' that really should be const.  gcc complains about this *a lot*
-        settings['extra_compile_args'] = ['-Wno-write-strings', '-Wno-deprecated-declarations']
-
-        settings['define_macros'].append( ('MAC_OS_X_VERSION_10_7',) )
-
     else:
-        # Other posix-like: Linux, Solaris, etc.
+        # Other posix-like: Linux, Solaris, OS X, etc.
+        include_dirs = [
+            '/usr/include',
+            '/usr/local/include',
+            '/opt/local/include'
+            ]
+        if sys.platform == 'darwin':
+            include_dirs.append('/sw/include')
 
         # Python functions take a lot of 'char *' that really should be const.  gcc complains about this *a lot*
         settings['extra_compile_args'] = ['-Wno-write-strings']
 
-        # What is the proper way to detect iODBC, MyODBC, unixODBC, etc.?
-        settings['libraries'].append('odbc')
-        settings['extra_compile_args'].append('-DSQL_WCHART_CONVERT=1')
+        def find_include_file(header):
+            for directory in include_dirs:
+                if isfile(join(directory, header)):
+                    return True
+
+        if find_include_file('iodbcext.h'):
+            settings['libraries'].append('iodbc')
+        elif find_include_file('uodbc_extras.h'):
+            settings['libraries'].append('odbc')
+            # This makes UnixODBC use UCS-4 instead of UCS-2, which works better with wchar_t
+            settings['extra_compile_args'].append('-DSQL_WCHART_CONVERT=1')
+        else:
+            raise SystemExit('Did not find header files for either iODBC or unixODBC')
+
+        if sys.platform == 'darwin':
+            # OS/X now ships with iODBC.
+
+            # Apple has decided they won't maintain the iODBC system in OS/X and has added deprecation warnings in 10.8.
+            # For now target 10.7 to eliminate the warnings.
+            settings['extra_compile_args'].append('-Wno-deprecated-declarations')
+            settings['define_macros'].append( ('MAC_OS_X_VERSION_10_7',) )
 
     return settings
 
@@ -253,7 +266,7 @@ def _get_version_pkginfo():
 
 
 def _get_version_git():
-    n, result = getoutput('git describe --tags --match \'3.*\'')
+    n, result = getoutput('git describe --tags --match 3.*')
     if n:
         _print('WARNING: git describe failed with: %s %s' % (n, result))
         return None, None
@@ -271,8 +284,8 @@ def _get_version_git():
         name = '%s.%s.%s-beta%02d' % tuple(numbers)
 
     n, result = getoutput('git branch')
-    branch = re.search(r'\* (.+)', result).group(1)
-    if branch != 'master' and branch != '(no branch)' and not re.match('^v\d+$', branch):
+    branch = re.search(r'\* (\w+)', result).group(1)
+    if branch != 'master' and not re.match('^v\d+$', branch):
         name = branch + '-' + name
 
     return name, numbers
