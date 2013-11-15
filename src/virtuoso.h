@@ -20,6 +20,10 @@
 # define SQL_DESC_COL_LITERAL_LANG          1061L
 # define SQL_DESC_COL_LITERAL_TYPE          1062L
 
+#endif
+
+#if !defined(VIRTUOSO_DV_ANY)
+
 /*
  *  Virtuoso - ODBC SQL_DESC_COL_DV_TYPE
  */

@@ -157,21 +157,6 @@ def get_compiler_settings(version_str):
         # Windows Cygwin (posix on windows)
         # OS name not windows, but still on Windows
         settings['libraries'].append('odbc32')
-
-    elif sys.platform == 'darwin':
-        # OS/X now ships with iODBC.
-        settings['libraries'].append('iodbc')
-
-        # Python functions take a lot of 'char *' that really should be const.  gcc complains about this *a lot*
-        settings['extra_compile_args'].extend([
-            '-Wno-write-strings',
-            '-Wno-deprecated-declarations'
-        ])
-
-        # Apple has decided they won't maintain the iODBC system in OS/X and has added deprecation warnings in 10.8.
-        # For now target 10.7 to eliminate the warnings.
-        settings['define_macros'].append( ('MAC_OS_X_VERSION_10_7',) )
-
     else:
         # Other posix-like: Linux, Solaris, OS X, etc.
         include_dirs = [
@@ -193,12 +178,18 @@ def get_compiler_settings(version_str):
         def find_include_file(header):
             for directory in include_dirs:
                 if isfile(join(directory, header)):
-                    return True
+                    return directory
 
-        if find_include_file('iodbcext.h'):
+        found_iodbcext = find_include_file('iodbcext.h')
+        found_uodbcext = find_include_file('uodbc_extras.h')
+        if found_iodbcext:
             settings['libraries'].append('iodbc')
-        elif find_include_file('uodbc_extras.h'):
+            if found_iodbcext != '/usr/include':
+                settings['include_dirs'].append(found_iodbcext)
+        elif found_uodbcext:
             settings['libraries'].append('odbc')
+            if found_uodbcext != '/usr/include':
+                settings['include_dirs'].append(found_uodbcext)
         else:
             raise SystemExit('Did not find header files for either iODBC or unixODBC')
 
@@ -208,8 +199,8 @@ def get_compiler_settings(version_str):
             # Apple has decided they won't maintain the iODBC system in OS/X and has added deprecation warnings in 10.8.
             # For now target 10.7 to eliminate the warnings.
             settings['extra_compile_args'].append('-Wno-deprecated-declarations')
-            settings['define_macros'].append( ('MAC_OS_X_VERSION_10_7',) )
-
+            settings['define_macros'].append( ('MAC_OS_X_VERSION_10_8',) )
+    print settings
     return settings
 
 
