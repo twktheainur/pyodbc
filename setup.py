@@ -119,6 +119,7 @@ def get_compiler_settings(version_str):
         'extra_compile_args' : [],
         'libraries': [],
         'include_dirs': [],
+        'library_dirs': [],
         'define_macros' : [ ('PYODBC_VERSION', version_str) ] 
     }
 
@@ -160,11 +161,12 @@ def get_compiler_settings(version_str):
     else:
         # Other posix-like: Linux, Solaris, OS X, etc.
         include_dirs = [
-            '/usr/include',
-            '/usr/local/include',
-            '/opt/local/include'
+            '/usr',
+            '/usr/local',
+            '/opt/local'
             ]
         if sys.platform == 'darwin':
+            include_dirs.insert(0, '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr')
             include_dirs.append('/sw/include')
 
         # Python functions take a lot of 'char *' that really should be const.  gcc complains about this *a lot*
@@ -177,19 +179,20 @@ def get_compiler_settings(version_str):
 
         def find_include_file(header):
             for directory in include_dirs:
-                if isfile(join(directory, header)):
+                if isfile(join(directory, 'include', header)):
                     return directory
 
-        found_iodbcext = find_include_file('iodbcext.h')
-        found_uodbcext = find_include_file('uodbc_extras.h')
-        if found_iodbcext:
-            settings['libraries'].append('iodbc')
-            if found_iodbcext != '/usr/include':
-                settings['include_dirs'].append(found_iodbcext)
-        elif found_uodbcext:
-            settings['libraries'].append('odbc')
-            if found_uodbcext != '/usr/include':
-                settings['include_dirs'].append(found_uodbcext)
+        ext_files = (('iodbcext.h', 'iodbc'), ('uodbc_extras.h', 'odbc'))
+        for ext_file, libname in ext_files:
+            found = find_include_file(ext_file)
+            if found:
+                settings['libraries'].append(libname)
+                if 'SDKs' in found:
+                    settings['extra_compile_args'].extend(('-isysroot', found[:-4]))
+                elif found != '/usr':
+                    settings['include_dirs'].append(join(found, 'include'))
+                    settings['library_dirs'].append(join(found, 'lib'))
+                break
         else:
             raise SystemExit('Did not find header files for either iODBC or unixODBC')
 
