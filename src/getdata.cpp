@@ -700,6 +700,7 @@ PyObject *GetDataSPASQL(Cursor *cur, Py_ssize_t column)
     if (!SQL_SUCCEEDED(ret)) {
    return Py_None;
     }    
+    TRACE("virtuoso type=%d\n", dvtype);
     Py_BEGIN_ALLOW_THREADS
    ret = SQLGetDescField(hdesc, column, SQL_DESC_COL_BOX_FLAGS, &flag, SQL_IS_INTEGER, NULL);
     Py_END_ALLOW_THREADS;
@@ -763,8 +764,10 @@ PyObject* GetData(Cursor* cur, Py_ssize_t iCol)
         return GetDataUser(cur, iCol, conv_index);
 
     // Check if we have to apply SPASQL processing
-    if (cur->spasql)
+    if (cur->spasql && pinfo->sql_type != SQL_INTEGER) {
+        TRACE("Applying spasql to type %d, ", pinfo->sql_type);
         return GetDataSPASQL(cur, iCol);
+    }
 
     switch (pinfo->sql_type)
     {
