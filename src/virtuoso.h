@@ -44,7 +44,7 @@
 # define VIRTUOSO_DV_C_SHORT 184
 # define VIRTUOSO_DV_C_INT 201
 # define VIRTUOSO_DV_SHORT_INT 188
-
+# define VIRTUOSO_DV_BLOB_WIDE_HANDLE 133   // For long nvarchar
 
 /*
  *  Virtuoso - ODBC SQL_DESC_COL_DT_DT_TYPE
