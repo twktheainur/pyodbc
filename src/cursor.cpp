@@ -818,6 +818,7 @@ static PyObject* execute(Cursor* cur, PyObject* pSql, PyObject* params, bool ski
     {
         // Example: A delete statement that did not delete anything.
         cur->rowcount = 0;
+        cur->lastserial = -1;
         Py_INCREF(cur);
         return (PyObject*)cur;
     }
@@ -833,6 +834,15 @@ static PyObject* execute(Cursor* cur, PyObject* pSql, PyObject* params, bool ski
         return RaiseErrorFromHandle("SQLRowCount", cur->cnxn->hdbc, cur->hstmt);
 
     cur->rowcount = (int)cRows;
+
+    // SQLINTEGER lSerial = -1;
+    // Py_BEGIN_ALLOW_THREADS
+    // ret = SQLGetStmtOption(cur->hstmt, SQL_GETLASTSERIAL, &lSerial);
+    // Py_END_ALLOW_THREADS
+    // if (!SQL_SUCCEEDED(ret))
+    //     return RaiseErrorFromHandle("SQL_GETLASTSERIAL", cur->cnxn->hdbc, cur->hstmt);
+
+    // cur->lastserial = (int)lSerial;
 
     TRACE("SQLRowCount: %d\n", cRows);
 
@@ -1948,6 +1958,9 @@ static char rowcount_doc[] =
     "This read-only attribute specifies the number of rows the last DML statement\n"
     " (INSERT, UPDATE, DELETE) affected.  This is set to -1 for SELECT statements.";
 
+static char lastserial_doc[] =
+    "This read-only attribute specifies the ID of the last insert on a autoupdating numeric primary key";
+
 static char description_doc[] =
     "This read-only attribute is a sequence of 7-item sequences.  Each of these\n" \
     "sequences contains information describing one result column: (name, type_code,\n" \
@@ -1977,6 +1990,7 @@ static char connection_doc[] =
 static PyMemberDef Cursor_members[] =
 {
     {"rowcount",    T_INT,       offsetof(Cursor, rowcount),        READONLY, rowcount_doc },
+    {"lastserial",  T_INT,       offsetof(Cursor, lastserial),      READONLY, lastserial_doc },
     {"description", T_OBJECT_EX, offsetof(Cursor, description),     READONLY, description_doc },
     {"arraysize",   T_INT,       offsetof(Cursor, arraysize),       0,        arraysize_doc },
     {"connection",  T_OBJECT_EX, offsetof(Cursor, cnxn),            READONLY, connection_doc },
@@ -2246,6 +2260,7 @@ Cursor_New(Connection* cnxn)
         cur->colinfos          = 0;
         cur->arraysize         = 1;
         cur->rowcount          = -1;
+        cur->lastserial        = -1;
         cur->map_name_to_index = 0;
 
         Py_INCREF(cnxn);
