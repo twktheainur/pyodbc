@@ -9,6 +9,7 @@
 #include "cnxninfo.h"
 #include "connection.h"
 #include "wrapper.h"
+#include "errors.h"
 
 // Maps from a Python string of the SHA1 hash to a CnxnInfo object.
 //
@@ -124,23 +125,37 @@ static PyObject* CnxnInfo_New(Connection* cnxn)
     if (SQL_SUCCEEDED(SQLAllocHandle(SQL_HANDLE_STMT, cnxn->hdbc, &hstmt)))
     {
         ULONG columnsize;
-        if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_TYPE_TIMESTAMP)) && SQL_SUCCEEDED(SQLFetch(hstmt)))
+        if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_TYPE_TIMESTAMP)) && SQL_SUCCEEDED(SQLFetch(hstmt))) {
             if (SQL_SUCCEEDED(SQLGetData(hstmt, 3, SQL_INTEGER, &columnsize, sizeof(columnsize), 0)))
                 p->datetime_precision = (int)columnsize;
+            SQLFreeStmt(hstmt, SQL_CLOSE);
+            TRACE("SQL_TYPE_TIMESTAMP column_size=%d\n", columnsize);
+        }
 
-        if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_VARCHAR)) && SQL_SUCCEEDED(SQLFetch(hstmt)))
-            if (SQL_SUCCEEDED(SQLGetData(hstmt, 3, SQL_INTEGER, &columnsize, sizeof(columnsize), 0)))
+        if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_VARCHAR)) && SQL_SUCCEEDED(ret=SQLFetch(hstmt))) {
+            if (SQL_SUCCEEDED(ret=SQLGetData(hstmt, 3, SQL_INTEGER, &columnsize, sizeof(columnsize), 0))) {
                 p->varchar_maxlength = (int)columnsize;
+            }
+            SQLFreeStmt(hstmt, SQL_CLOSE);
+            TRACE("SQL_VARCHAR column_size=%d\n", columnsize);
+        }
 
-        if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_WVARCHAR)) && SQL_SUCCEEDED(SQLFetch(hstmt)))
-            if (SQL_SUCCEEDED(SQLGetData(hstmt, 3, SQL_INTEGER, &columnsize, sizeof(columnsize), 0)))
+        if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_WVARCHAR)) && SQL_SUCCEEDED(SQLFetch(hstmt))) {
+            if (SQL_SUCCEEDED(SQLGetData(hstmt, 3, SQL_INTEGER, &columnsize, sizeof(columnsize), 0))) {
                 p->wvarchar_maxlength = (int)columnsize;
+            }
+            SQLFreeStmt(hstmt, SQL_CLOSE);
+            TRACE("SQL_WVARCHAR column_size=%d\n", columnsize);
+        }
 
-        if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_BINARY)) && SQL_SUCCEEDED(SQLFetch(hstmt)))
+        if (SQL_SUCCEEDED(SQLGetTypeInfo(hstmt, SQL_BINARY)) && SQL_SUCCEEDED(SQLFetch(hstmt))) {
             if (SQL_SUCCEEDED(SQLGetData(hstmt, 3, SQL_INTEGER, &columnsize, sizeof(columnsize), 0)))
                 p->binary_maxlength = (int)columnsize;
+            SQLFreeStmt(hstmt, SQL_CLOSE);
+            TRACE("SQL_BINARY column_size=%d\n", columnsize);
+        }
 
-        SQLFreeStmt(hstmt, SQL_CLOSE);
+        SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
     }
 
     Py_END_ALLOW_THREADS
