@@ -186,6 +186,8 @@ def get_compiler_settings(version_str):
         for ext_file, libname in ext_files:
             found = find_include_file(ext_file)
             if found:
+                if libname == 'iodbc':
+                    settings['define_macros'].append( ('HAVE_IODBC', 1) )
                 settings['libraries'].append(libname)
                 if 'SDKs' in found:
                     settings['extra_compile_args'].extend(('-isysroot', found[:-4]))

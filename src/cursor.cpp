@@ -835,14 +835,14 @@ static PyObject* execute(Cursor* cur, PyObject* pSql, PyObject* params, bool ski
 
     cur->rowcount = (int)cRows;
 
-    // SQLINTEGER lSerial = -1;
-    // Py_BEGIN_ALLOW_THREADS
-    // ret = SQLGetStmtOption(cur->hstmt, SQL_GETLASTSERIAL, &lSerial);
-    // Py_END_ALLOW_THREADS
-    // if (!SQL_SUCCEEDED(ret))
-    //     return RaiseErrorFromHandle("SQL_GETLASTSERIAL", cur->cnxn->hdbc, cur->hstmt);
+    SQLINTEGER lSerial = -1;
+    Py_BEGIN_ALLOW_THREADS
+    ret = SQLGetStmtOption(cur->hstmt, SQL_GETLASTSERIAL, &lSerial);
+    Py_END_ALLOW_THREADS
+    if (!SQL_SUCCEEDED(ret))
+        return RaiseErrorFromHandle("SQL_GETLASTSERIAL", cur->cnxn->hdbc, cur->hstmt);
 
-    // cur->lastserial = (int)lSerial;
+    cur->lastserial = (int)lSerial;
 
     TRACE("SQLRowCount: %d\n", cRows);
 
