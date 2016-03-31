@@ -835,6 +835,7 @@ static PyObject* execute(Cursor* cur, PyObject* pSql, PyObject* params, bool ski
 
     cur->rowcount = (int)cRows;
 
+    #ifdef HAVE_IODBC
     SQLINTEGER lSerial = -1;
     Py_BEGIN_ALLOW_THREADS
     ret = SQLGetStmtOption(cur->hstmt, SQL_GETLASTSERIAL, &lSerial);
@@ -843,6 +844,7 @@ static PyObject* execute(Cursor* cur, PyObject* pSql, PyObject* params, bool ski
         return RaiseErrorFromHandle("SQL_GETLASTSERIAL", cur->cnxn->hdbc, cur->hstmt);
 
     cur->lastserial = (int)lSerial;
+    #endif
 
     TRACE("SQLRowCount: %d\n", cRows);
 
