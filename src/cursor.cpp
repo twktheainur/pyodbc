@@ -844,6 +844,8 @@ static PyObject* execute(Cursor* cur, PyObject* pSql, PyObject* params, bool ski
         return RaiseErrorFromHandle("SQL_GETLASTSERIAL", cur->cnxn->hdbc, cur->hstmt);
 
     cur->lastserial = (int)lSerial;
+    #else
+    cur->lastserial = 0;
     #endif
 
     TRACE("SQLRowCount: %d\n", cRows);
