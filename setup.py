@@ -204,8 +204,7 @@ def get_compiler_settings(version_str):
             # Apple has decided they won't maintain the iODBC system in OS/X and has added deprecation warnings in 10.8.
             # For now target 10.7 to eliminate the warnings.
             settings['extra_compile_args'].append('-Wno-deprecated-declarations')
-            settings['define_macros'].append( ('MAC_OS_X_VERSION_10_8',) )
-    print settings
+            settings['define_macros'].append( ('MAC_OS_X_VERSION_10_12',) )
     return settings
 
 
