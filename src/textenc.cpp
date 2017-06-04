@@ -103,6 +103,18 @@ PyObject* TextBufferToObject(const TextEnc& enc, void* pbData, Py_ssize_t cbData
                 byteorder = BYTEORDER_BE;
                 str = PyUnicode_DecodeUTF16((char*)pbData, cbData, "strict", &byteorder);
                 break;
+            case OPTENC_UTF32:
+                byteorder = BYTEORDER_NATIVE;
+                str = PyUnicode_DecodeUTF32((char*)pbData, cbData, "strict", &byteorder);
+                break;
+            case OPTENC_UTF32LE:
+                byteorder = BYTEORDER_LE;
+                str = PyUnicode_DecodeUTF32((char*)pbData, cbData, "strict", &byteorder);
+                break;
+            case OPTENC_UTF32BE:
+                byteorder = BYTEORDER_BE;
+                str = PyUnicode_DecodeUTF32((char*)pbData, cbData, "strict", &byteorder);
+                break;
             case OPTENC_LATIN1:
                 str = PyUnicode_DecodeLatin1((char*)pbData, cbData, "strict");
                 break;
@@ -141,6 +153,15 @@ PyObject* TextBufferToObject(const TextEnc& enc, void* pbData, Py_ssize_t cbData
             break;
         case OPTENC_UTF16BE:
             encoding = "utf-16-be";
+            break;
+        case OPTENC_UTF32:
+            encoding = "utf-32";
+            break;
+        case OPTENC_UTF32LE:
+            encoding = "utf-32-le";
+            break;
+        case OPTENC_UTF32BE:
+            encoding = "utf-32-be";
             break;
         case OPTENC_LATIN1:
             encoding = "latin-1";

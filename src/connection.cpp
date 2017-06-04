@@ -17,6 +17,7 @@
 #include "errors.h"
 #include "cnxninfo.h"
 #include "sqlwchar.h"
+#include "virtuoso.h"
 
 #if PY_MAJOR_VERSION < 3
 static bool IsStringType(PyObject* t) { return (void*)t == (void*)&PyString_Type; }
@@ -211,6 +212,7 @@ PyObject* Connection_New(PyObject* pConnectString, bool fAutoCommit, bool fAnsi,
     cnxn->conv_count   = 0;
     cnxn->conv_types   = 0;
     cnxn->conv_funcs   = 0;
+    cnxn->virtuoso     = isVirtuoso(hdbc);
 
     // This is an inefficient default, but should work all the time.  When we are offered
     // single-byte text we don't actually know what the encoding is.  For example, with SQL

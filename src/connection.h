@@ -85,6 +85,7 @@ struct Connection
     }
 
     bool need_long_data_len;
+    bool virtuoso;
 
     // Output conversions.  Maps from SQL type in conv_types to the converter function in conv_funcs.
     //

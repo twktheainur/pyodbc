@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, re, platform
-from os.path import exists, abspath, dirname, join, isdir, relpath
+from os.path import exists, abspath, dirname, join, isdir, relpath, isfile
 
 try:
     # Allow use of setuptools so eggs can be built.
@@ -154,40 +154,54 @@ def get_compiler_settings(version_str):
         # OS name not windows, but still on Windows
         settings['libraries'].append('odbc32')
 
-    elif sys.platform == 'darwin':
-        # The latest versions of OS X no longer ship with iodbc.  Assume
-        # unixODBC for now.
-        settings['libraries'].append('odbc')
-
-        # Python functions take a lot of 'char *' that really should be const.  gcc complains about this *a lot*
-        settings['extra_compile_args'].extend([
-            '-Wno-write-strings',
-            '-Wno-deprecated-declarations'
-        ])
-
-        # Apple has decided they won't maintain the iODBC system in OS/X and has added deprecation warnings in 10.8.
-        # For now target 10.7 to eliminate the warnings.
-        settings['define_macros'].append( ('MAC_OS_X_VERSION_10_7',) )
-
-        # Add directories for MacPorts and Homebrew.
-        dirs = ['/usr/local/include', '/opt/local/include','~/homebrew/include']
-        settings['include_dirs'].extend(dir for dir in dirs if isdir(dir))
-
     else:
-        # Other posix-like: Linux, Solaris, etc.
-
+        # Other posix-like: Linux, Solaris, OS X, etc.
+        include_dirs = [
+            '/usr',
+            '/usr/local',
+            '/opt/local'
+            ]
         # Python functions take a lot of 'char *' that really should be const.  gcc complains about this *a lot*
         settings['extra_compile_args'].append('-Wno-write-strings')
 
-        from array import array
-        UNICODE_WIDTH = array('u').itemsize
-        if UNICODE_WIDTH == 4:
-            # This makes UnixODBC use UCS-4 instead of UCS-2, which works better with sizeof(wchar_t)==4.
-            # Thanks to Marc-Antoine Parent
-            settings['define_macros'].append(('SQL_WCHART_CONVERT', '1'))
+        if sys.platform == 'darwin':
+            # homebrew specifics. prefer iodbc for virtuoso
+            include_dirs = ['/usr/local/opt/libiodbc',
+                            '/usr/local/opt/unixodbc'] + include_dirs
+            include_dirs.append('/sw/include')
+            os_version_str = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.%d.sdk/usr'
+            for os_version in range(7, 16):
+                if exists(os_version_str % os_version):
+                    include_dirs.append(os_version_str % os_version)
+                    settings['define_macros'].append( ('MAC_OS_X_VERSION_10_%d' % os_version , 1) )
+                    break
 
-        # What is the proper way to detect iODBC, MyODBC, unixODBC, etc.?
-        settings['libraries'].append('odbc')
+        def find_include_file(header):
+            for directory in include_dirs:
+                if isfile(join(directory, 'include', header)):
+                    return directory
+
+        ext_files = (('iodbcext.h', 'iodbc'), ('uodbc_extras.h', 'odbc'))
+        for ext_file, libname in ext_files:
+            found = find_include_file(ext_file)
+            if found:
+                if libname == 'iodbc':
+                    settings['define_macros'].append( ('HAVE_IODBC', 1) )
+                settings['libraries'].append(libname)
+                if found != '/usr':
+                    settings['include_dirs'].append(join(found, 'include'))
+                    settings['library_dirs'] = [join(found, 'lib')]
+                break
+        else:
+            raise SystemExit('Did not find header files for either iODBC or unixODBC')
+
+        if sys.platform == 'darwin':
+            # OS/X now ships with iODBC.
+
+            # Apple has decided they won't maintain the iODBC system in OS/X and has added deprecation warnings in 10.8.
+            # For now target 10.7 to eliminate the warnings.
+            settings['extra_compile_args'].append('-Wno-deprecated-declarations')
+            # settings['define_macros'].append( ('MAC_OS_X_VERSION_10_12',) )
 
     return settings
 

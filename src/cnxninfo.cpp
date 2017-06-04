@@ -9,6 +9,7 @@
 #include "textenc.h"
 #include "cnxninfo.h"
 #include "connection.h"
+#include "errors.h"
 
 // Maps from a Python string of the SHA1 hash to a CnxnInfo object.
 //
