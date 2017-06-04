@@ -90,7 +90,7 @@ static bool ReadVarColumn(Cursor* cur, Py_ssize_t iCol, SQLSMALLINT ctype, bool&
     pbResult = 0;
     cbResult = 0;
 
-    const Py_ssize_t cbElement = (Py_ssize_t)(IsWideType(ctype) ? sizeof(ODBCCHAR) : 1);
+    const Py_ssize_t cbElement = (Py_ssize_t)(IsWideType(ctype) ? sizeof(SQLWCHAR) : 1);
     const Py_ssize_t cbNullTerminator = IsBinaryType(ctype) ? 0 : cbElement;
 
     // TODO: Make the initial allocation size configurable?

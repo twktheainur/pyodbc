@@ -9,7 +9,8 @@ typedef unsigned short ODBCCHAR;
 // operate on.
 
 enum {
-    ODBCCHAR_SIZE = 2
+    ODBCCHAR_SIZE = 2,
+    TCHAR_SIZE = 4
 };
 
 class SQLWChar
@@ -86,7 +87,7 @@ public:
     const char* value() const { return sz; }
 
     Py_ssize_t bytelen() const { return cb; }
-    Py_ssize_t charlen() const { return cb / (ctype == SQL_C_WCHAR ? ODBCCHAR_SIZE : 1); }
+    Py_ssize_t charlen() const { return cb / (ctype == SQL_C_WCHAR ? sizeof(SQLWCHAR) : 1); }
 };
 
 #endif // _PYODBCSQLWCHAR_H

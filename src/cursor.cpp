@@ -155,7 +155,7 @@ static bool create_name_map(Cursor* cur, SQLSMALLINT field_count, bool lower)
 
     for (int i = 0; i < field_count; i++)
     {
-        ODBCCHAR szName[300];
+        SQLWCHAR szName[300];
         SQLSMALLINT cchName;
         SQLSMALLINT nDataType;
         SQLULEN nColSize;           // precision
@@ -635,7 +635,7 @@ static PyObject* execute(Cursor* cur, PyObject* pSql, PyObject* params, bool ski
         bool isWide = (penc->ctype == SQL_C_WCHAR);
 
         const char* pch = PyBytes_AS_STRING(query.Get());
-        SQLINTEGER  cch = (SQLINTEGER)(PyBytes_GET_SIZE(query.Get()) / (isWide ? sizeof(ODBCCHAR) : 1));
+        SQLINTEGER  cch = (SQLINTEGER)(PyBytes_GET_SIZE(query.Get()) / (isWide ? sizeof(SQLWCHAR) : 1));
 
         Py_BEGIN_ALLOW_THREADS
         if (isWide)

@@ -166,8 +166,8 @@ def get_compiler_settings(version_str):
 
         if sys.platform == 'darwin':
             # homebrew specifics. prefer iodbc for virtuoso
-            include_dirs = ['/usr/local/opt/libiodbc',
-                            '/usr/local/opt/unixodbc'] + include_dirs
+            include_dirs = ['/usr/local/opt/unixodbc',
+                            '/usr/local/opt/libiodbc'] + include_dirs
             include_dirs.append('/sw/include')
             os_version_str = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.%d.sdk/usr'
             for os_version in range(7, 16):
@@ -181,12 +181,14 @@ def get_compiler_settings(version_str):
                 if isfile(join(directory, 'include', header)):
                     return directory
 
-        ext_files = (('iodbcext.h', 'iodbc'), ('uodbc_extras.h', 'odbc'))
+        ext_files = (('uodbc_extras.h', 'odbc'), ('iodbcext.h', 'iodbc'))
         for ext_file, libname in ext_files:
             found = find_include_file(ext_file)
             if found:
                 if libname == 'iodbc':
                     settings['define_macros'].append( ('HAVE_IODBC', 1) )
+                else:
+                    settings['define_macros'].append( ('SQL_WCHART_CONVERT', 1) )
                 settings['libraries'].append(libname)
                 if found != '/usr':
                     settings['include_dirs'].append(join(found, 'include'))
