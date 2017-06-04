@@ -128,6 +128,9 @@ struct Cursor
     // The Cursor.rowcount attribute from the DB API specification.
     int rowcount;
 
+    // the last inserted serial
+    int lastserial;
+
     // is a SPASQL query on a virtuoso server, requires special datatype handling
     bool spasql;
 
