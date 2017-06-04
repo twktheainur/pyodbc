@@ -1,5 +1,6 @@
 #include "pyodbc.h"
 #include "virtuoso.h"
+#include "pyodbccompat.h"
 
 bool
 isVirtuoso(HDBC hdbc)
@@ -21,7 +22,8 @@ isVirtuoso(HDBC hdbc)
 bool
 isSPASQL(PyObject *pSql)
 {
-    char *query = PyString_AS_STRING(pSql);
+    // check if it's a string or unicode?
+    char *query = PyBytes_AS_STRING(pSql);
 
     if (!query)
 	return false;
