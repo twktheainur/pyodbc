@@ -1341,7 +1341,7 @@ class SqlServerTestCase(unittest.TestCase):
     def test_drivers(self):
         drivers = pyodbc.drivers()
         self.assertEqual(list, type(drivers))
-        self.assert_(len(drivers) > 1)
+        self.assert_(len(drivers) > 0)
 
         m = re.search('DRIVER={([^}]+)}', self.connection_string, re.IGNORECASE)
         current = m.group(1)
@@ -1356,6 +1356,49 @@ class SqlServerTestCase(unittest.TestCase):
         self.cursor.execute("insert into t1 values (1)")
         self.cursor.execute('select a as "Tipología" from t1')
         self.assertEqual(self.cursor.description[0][0], "Tipología")
+
+    def test_exc_integrity(self):
+        "Make sure an IntegretyError is raised"
+        # This is really making sure we are properly encoding and comparing the SQLSTATEs.
+        self.cursor.execute("create table t1(s1 varchar(10) primary key)")
+        self.cursor.execute("insert into t1 values ('one')")
+        self.failUnlessRaises(pyodbc.IntegrityError, self.cursor.execute, "insert into t1 values ('one')")
+
+    def test_columns(self):
+        # When using aiohttp, `await cursor.primaryKeys('t1')` was raising the error
+        #
+        #   Error: TypeError: argument 2 must be str, not None
+        #
+        # I'm not sure why, but PyArg_ParseTupleAndKeywords fails if you use "|s" for an
+        # optional string keyword when calling indirectly.
+
+        self.cursor.execute("create table t1(a int, b varchar(3))")
+
+        self.cursor.columns('t1')
+        results = {row.column_name: row for row in self.cursor}
+        row = results['a']
+        assert row.type_name == 'int', row.type_name
+        row = results['b']
+        assert row.type_name == 'varchar'
+        assert row.column_size == 3
+
+        # Now do the same, but specifically pass in None to one of the keywords.  Old versions
+        # were parsing arguments incorrectly and would raise an error.  (This crops up when
+        # calling indirectly like columns(*args, **kwargs) which aiodbc does.)
+
+        self.cursor.columns('t1', schema=None, catalog=None)
+        results = {row.column_name: row for row in self.cursor}
+        row = results['a']
+        assert row.type_name == 'int', row.type_name
+        row = results['b']
+        assert row.type_name == 'varchar'
+        assert row.column_size == 3
+
+    def test_cancel(self):
+        # I'm not sure how to reliably cause a hang to cancel, so for now we'll settle with
+        # making sure SQLCancel is called correctly.
+        self.cursor.execute("select 1")
+        self.cursor.cancel()
 
 
 def main():

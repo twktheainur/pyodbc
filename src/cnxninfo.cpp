@@ -47,6 +47,14 @@ static PyObject* GetHash(PyObject* p)
     if (!bytes)
         return 0;
     p = bytes.Get();
+#else
+    Object bytes(PyUnicode_Check(p) ? PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(p), PyUnicode_GET_SIZE(p), 0) : 0);
+    if (PyUnicode_Check(p))
+    {
+        if (!bytes)
+            return 0;
+        p = bytes.Get();
+    }
 #endif
 
     Object hash(PyObject_CallMethod(hashlib, "new", "s", "sha1"));
@@ -76,7 +84,7 @@ inline void GetColumnSize(Connection* cnxn, SQLSMALLINT sqltype, int* psize)
     {
         // I believe some drivers are returning negative numbers for "unlimited" text fields,
         // such as FileMaker.  Ignore anything that seems too small.
-        if (columnsize >= 255)
+        if (columnsize >= 1)
             *psize = (int)columnsize;
     }
 

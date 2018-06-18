@@ -4,29 +4,31 @@
 
 from __future__ import print_function
 
-import sys, os, re, uuid
+import uuid
 import unittest
 from decimal import Decimal
 from testutils import *
 
 _TESTSTR = '0123456789-abcdefghijklmnopqrstuvwxyz-'
 
+
 def _generate_test_string(length):
     """
     Returns a string of composed of `seed` to make a string `length` characters long.
 
-    To enhance performance, there are 3 ways data is read, based on the length of the value, so most data types are
-    tested with 3 lengths.  This function helps us generate the test data.
+    To enhance performance, there are 3 ways data is read, based on the length of the value, so
+    most data types are tested with 3 lengths.  This function helps us generate the test data.
 
-    We use a recognizable data set instead of a single character to make it less likely that "overlap" errors will
-    be hidden and to help us manually identify where a break occurs.
+    We use a recognizable data set instead of a single character to make it less likely that
+    "overlap" errors will be hidden and to help us manually identify where a break occurs.
     """
     if length <= len(_TESTSTR):
         return _TESTSTR[:length]
 
-    c = int((length + len(_TESTSTR)-1) / len(_TESTSTR))
+    c = int((length + len(_TESTSTR) - 1) / len(_TESTSTR))
     v = _TESTSTR * c
     return v[:length]
+
 
 class PGTestCase(unittest.TestCase):
 
@@ -183,12 +185,22 @@ class PGTestCase(unittest.TestCase):
         v2 = '0123456789' * 30
         v3 = '9876543210' * 30
 
-        self.cursor.execute("insert into t1(c1, c2, c3) values (?,?,?)", v1, v2, v3);
+        self.cursor.execute("insert into t1(c1, c2, c3) values (?,?,?)", v1, v2, v3)
         row = self.cursor.execute("select c1, c2, c3 from t1").fetchone()
 
         self.assertEqual(v1, row.c1)
         self.assertEqual(v2, row.c2)
         self.assertEqual(v3, row.c3)
+
+    def test_chinese(self):
+        v = '我的'
+        self.cursor.execute("SELECT N'我的' AS name")
+        row = self.cursor.fetchone()
+        self.assertEqual(row[0], v)
+
+        self.cursor.execute("SELECT N'我的' AS name")
+        rows = self.cursor.fetchall()
+        self.assertEqual(rows[0][0], v)
 
     #
     # bytea
@@ -420,6 +432,29 @@ class PGTestCase(unittest.TestCase):
             self.assertEqual(param[0], row[0])
             self.assertEqual(param[1], row[1])
 
+    def test_fast_executemany(self):
+
+        self.fast_executemany = True
+
+        self.cursor.execute("create table t1(a int, b varchar(10))")
+
+        params = [(i, str(i)) for i in range(1, 6)]
+
+        self.cursor.executemany("insert into t1(a, b) values (?,?)", params)
+
+        # REVIEW: Without the cast, we get the following error: [07006] [unixODBC]Received an
+        # unsupported type from Postgres.;\nERROR: table "t2" does not exist (14)
+
+        count = self.cursor.execute("select cast(count(*) as int) from t1").fetchone()[0]
+        self.assertEqual(count, len(params))
+
+        self.cursor.execute("select a, b from t1 order by a")
+        rows = self.cursor.fetchall()
+        self.assertEqual(count, len(rows))
+
+        for param, row in zip(params, rows):
+            self.assertEqual(param[0], row[0])
+            self.assertEqual(param[1], row[1])
 
     def test_executemany_failure(self):
         """
@@ -460,7 +495,7 @@ class PGTestCase(unittest.TestCase):
         self.failUnlessRaises(pyodbc.Error, self.cnxn.execute, "insert into t1 values (1)")
 
     def test_row_repr(self):
-        self.cursor.execute("create table t1(a int, b int, c int, d int)");
+        self.cursor.execute("create table t1(a int, b int, c int, d int)")
         self.cursor.execute("insert into t1 values(1,2,3,4)")
 
         row = self.cursor.execute("select * from t1").fetchone()
@@ -482,6 +517,14 @@ class PGTestCase(unittest.TestCase):
         othercnxn.autocommit = False
         self.assertEqual(othercnxn.autocommit, False)
 
+    def test_exc_integrity(self):
+        "Make sure an IntegretyError is raised"
+        # This is really making sure we are properly encoding and comparing the SQLSTATEs.
+        self.cursor.execute("create table t1(s1 varchar(10) primary key)")
+        self.cursor.execute("insert into t1 values ('one')")
+        self.failUnlessRaises(pyodbc.IntegrityError, self.cursor.execute, "insert into t1 values ('one')")
+
+
     def test_cnxn_set_attr_before(self):
         # I don't have a getattr right now since I don't have a table telling me what kind of
         # value to expect.  For now just make sure it doesn't crash.
@@ -496,6 +539,42 @@ class PGTestCase(unittest.TestCase):
         SQL_ATTR_ACCESS_MODE = 101
         SQL_MODE_READ_ONLY   = 1
         self.cnxn.set_attr(SQL_ATTR_ACCESS_MODE, SQL_MODE_READ_ONLY)
+
+    def test_columns(self):
+        # When using aiohttp, `await cursor.primaryKeys('t1')` was raising the error
+        #
+        #   Error: TypeError: argument 2 must be str, not None
+        #
+        # I'm not sure why, but PyArg_ParseTupleAndKeywords fails if you use "|s" for an
+        # optional string keyword when calling indirectly.
+
+        self.cursor.execute("create table t1(a int, b varchar(3))")
+
+        self.cursor.columns('t1')
+        results = {row.column_name: row for row in self.cursor}
+        row = results['a']
+        assert row.type_name == 'int4', row.type_name
+        row = results['b']
+        assert row.type_name == 'varchar'
+        assert row.precision == 3, row.precision
+
+        # Now do the same, but specifically pass in None to one of the keywords.  Old versions
+        # were parsing arguments incorrectly and would raise an error.  (This crops up when
+        # calling indirectly like columns(*args, **kwargs) which aiodbc does.)
+
+        self.cursor.columns('t1', schema=None, catalog=None)
+        results = {row.column_name: row for row in self.cursor}
+        row = results['a']
+        assert row.type_name == 'int4', row.type_name
+        row = results['b']
+        assert row.type_name == 'varchar'
+        assert row.precision == 3
+
+    def test_cancel(self):
+        # I'm not sure how to reliably cause a hang to cancel, so for now we'll settle with
+        # making sure SQLCancel is called correctly.
+        self.cursor.execute("select 1")
+        self.cursor.cancel()
 
 
 def main():
@@ -539,7 +618,7 @@ def main():
         s = unittest.TestSuite([ PGTestCase(connection_string, options.ansi, m) for m in methods ])
 
     testRunner = unittest.TextTestRunner(verbosity=options.verbose)
-    result = testRunner.run(s)
+    testRunner.run(s)
 
 if __name__ == '__main__':
 

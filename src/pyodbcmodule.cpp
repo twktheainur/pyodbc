@@ -452,7 +452,7 @@ static PyObject* mod_connect(PyObject* self, PyObject* args, PyObject* kwargs)
             if (Text_EqualsI(key, "encoding"))
             {
 #if PY_MAJOR_VERSION < 3
-                if (!PyString_Check(value) || !PyUnicode_Check(value))
+                if (!PyString_Check(value) && !PyUnicode_Check(value))
                     return PyErr_Format(PyExc_TypeError, "encoding must be a string or unicode object");
 #else
                 if (!PyUnicode_Check(value))
@@ -555,7 +555,7 @@ static PyObject* mod_drivers(PyObject* self)
     if (ret != SQL_NO_DATA)
     {
         Py_DECREF(result);
-        return RaiseErrorFromHandle("SQLDrivers", SQL_NULL_HANDLE, SQL_NULL_HANDLE);
+        return RaiseErrorFromHandle(0, "SQLDrivers", SQL_NULL_HANDLE, SQL_NULL_HANDLE);
     }
 
     return result.Detach();
@@ -597,7 +597,7 @@ static PyObject* mod_datasources(PyObject* self)
     if (ret != SQL_NO_DATA)
     {
         Py_DECREF(result);
-        return RaiseErrorFromHandle("SQLDataSources", SQL_NULL_HANDLE, SQL_NULL_HANDLE);
+        return RaiseErrorFromHandle(0, "SQLDataSources", SQL_NULL_HANDLE, SQL_NULL_HANDLE);
     }
 
     return result;
@@ -905,7 +905,6 @@ static const ConstantDef aConstants[] = {
     MAKECONST(SQL_COLLATION_SEQ),
     MAKECONST(SQL_COLUMN_ALIAS),
     MAKECONST(SQL_CONCAT_NULL_BEHAVIOR),
-    MAKECONST(SQL_CONVERT_FUNCTIONS),
     MAKECONST(SQL_CONVERT_VARCHAR),
     MAKECONST(SQL_CORRELATION_NAME),
     MAKECONST(SQL_CREATE_ASSERTION),
@@ -1060,6 +1059,49 @@ static const ConstantDef aConstants[] = {
     MAKECONST(VIRTUOSO_DT_TYPE_DATETIME),
     MAKECONST(VIRTUOSO_DT_TYPE_DATE),
     MAKECONST(VIRTUOSO_DT_TYPE_TIME),
+    // SQL_CONVERT_X
+    MAKECONST(SQL_CONVERT_FUNCTIONS),
+    MAKECONST(SQL_CONVERT_BIGINT),
+    MAKECONST(SQL_CONVERT_BINARY),
+    MAKECONST(SQL_CONVERT_BIT),
+    MAKECONST(SQL_CONVERT_CHAR),
+    MAKECONST(SQL_CONVERT_DATE),
+    MAKECONST(SQL_CONVERT_DECIMAL),
+    MAKECONST(SQL_CONVERT_DOUBLE),
+    MAKECONST(SQL_CONVERT_FLOAT),
+    MAKECONST(SQL_CONVERT_GUID),
+    MAKECONST(SQL_CONVERT_INTEGER),
+    MAKECONST(SQL_CONVERT_INTERVAL_DAY_TIME),
+    MAKECONST(SQL_CONVERT_INTERVAL_YEAR_MONTH),
+    MAKECONST(SQL_CONVERT_LONGVARBINARY),
+    MAKECONST(SQL_CONVERT_LONGVARCHAR),
+    MAKECONST(SQL_CONVERT_NUMERIC),
+    MAKECONST(SQL_CONVERT_REAL),
+    MAKECONST(SQL_CONVERT_SMALLINT),
+    MAKECONST(SQL_CONVERT_TIME),
+    MAKECONST(SQL_CONVERT_TIMESTAMP),
+    MAKECONST(SQL_CONVERT_TINYINT),
+    MAKECONST(SQL_CONVERT_VARBINARY),
+    MAKECONST(SQL_CONVERT_VARCHAR),
+    MAKECONST(SQL_CONVERT_WCHAR),
+    MAKECONST(SQL_CONVERT_WLONGVARCHAR),
+    MAKECONST(SQL_CONVERT_WVARCHAR),
+
+    // SQLSetConnectAttr transaction isolation
+    MAKECONST(SQL_ATTR_TXN_ISOLATION),
+    MAKECONST(SQL_TXN_READ_UNCOMMITTED),
+    MAKECONST(SQL_TXN_READ_COMMITTED),
+    MAKECONST(SQL_TXN_REPEATABLE_READ),
+    MAKECONST(SQL_TXN_SERIALIZABLE),
+
+    // Outer Join Capabilities
+    MAKECONST(SQL_OJ_LEFT),
+    MAKECONST(SQL_OJ_RIGHT),
+    MAKECONST(SQL_OJ_FULL),
+    MAKECONST(SQL_OJ_NESTED),
+    MAKECONST(SQL_OJ_NOT_ORDERED),
+    MAKECONST(SQL_OJ_INNER),
+    MAKECONST(SQL_OJ_ALL_COMPARISON_OPS),
 };
 
 
